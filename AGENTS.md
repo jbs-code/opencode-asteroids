@@ -36,7 +36,14 @@ Clon de Asteroids en canvas HTML5. Página estática sin build: `index.html` (ma
 - Al recogerlo, `ship.activateBoost(5)` (`BOOST_TIME`): empuje y velocidad máxima x2 (`BOOST_MULT`) durante 5 s. La nave cambia a color cian y el HUD muestra `VELOCIDAD` con cuenta atrás y barra.
 - `ship.reset()` pone `boostTimer` a 0: el boost se pierde al morir o al cambiar de nivel.
 
+## Escudo
+
+- `PowerUp` tiene tipo: `'boost'` (velocidad) o `'shield'` (escudo), elegido al azar en `maybeDropPickup()` desde `PICKUP_TYPES`. Comparte probabilidad (12%) y cooldown global (8 s) con el boost: el reparto es 50/50, no aumenta el total de drops.
+- Al recoger un power-up de escudo, `ship.activateShield()` carga `SHIELD_CHARGES` (3) cargas. El HUD dibuja `ESCUDO` con un pip por carga.
+- Con escudo activo, el impacto de la nave contra un asteroide o una estrella fugaz no la mata: consume una carga, vaporiza al asteroide (sin partirlo) y suma sus puntos.
+- `ship.reset()` pone `shieldCharges` a 0: el escudo se pierde al morir o al cambiar de nivel. Si el impacto con escudo destruye al último asteroide, el nivel se completa y el escudo se reinicia con el `ship.reset()` de `nextLevel()`.
+
 ## Documentación vs código
 
-- El README anuncia power-ups y "estrella fugaz": el power-up de velocidad ya existe en `game.js`; el resto sigue siendo trabajo pendiente, no algo a "arreglar".
+- El README anuncia power-ups y "estrella fugaz": tanto el power-up de velocidad como el de escudo y la estrella fugaz ya existen en `game.js`.
 - README y HUD en español (`NIVEL`, `PUNTAJE`, `GAME OVER`). Convención del curso: comentarios en español, identificadores en inglés.
