@@ -13,7 +13,7 @@ Clon de Asteroids en canvas HTML5. Página estática sin build: `index.html` (ma
 
 ## Cómo está cableado `game.js`
 
-- Clases `Ship`, `Bullet`, `Asteroid`, `Particle`, `PowerUp`. Convención única: `update(dt)` + `draw()`; "muerto" es `entity.dead`.
+- Clases `Ship`, `Bullet`, `Asteroid`, `Particle`, `PowerUp`, `Skin`. Convención única: `update(dt)` + `draw()`; "muerto" es `entity.dead`.
 - Bucle `requestAnimationFrame(loop)` → `update(dt)` → `draw()`. `dt` está acotado a 0.05 s para que no dé saltos al volver de otra pestaña.
 - El estado global son variables `let` a nivel de archivo (`ship`, `bullets`, `asteroids`, `particles`, `pickups`, `score`, `lives`, `level`, `state`, `deadTimer`, `pickupCooldown`); `initGame()` los reinicia y se invoca al final del archivo.
 - `W`/`H` (800/600) están duplicados en `game.js` y en `width`/`height` del `<canvas>` de `index.html`: cámbialos en los dos sitios. El canvas es un bitmap fijo, sin escalado por `devicePixelRatio` ni handler de `resize`.
@@ -33,8 +33,19 @@ Clon de Asteroids en canvas HTML5. Página estática sin build: `index.html` (ma
 
 - `maybeDropPickup(asteroid)` lo llama la colisión bala/asteroide: 12% de probabilidad (`PICKUP_CHANCE`) y cooldown global de 8 s (`PICKUP_COOLDOWN`) para no saturar la pantalla.
 - El `PowerUp` flota, tiene TTL de 14 s (`PICKUP_TTL`) y parpadea en los últimos 3 s. Se recoge con distancia euclídea simple (`dist`), igual que el resto de colisiones.
-- Al recogerlo, `ship.activateBoost(5)` (`BOOST_TIME`): empuje y velocidad máxima x2 (`BOOST_MULT`) durante 5 s. La nave cambia a color cian y el HUD muestra `VELOCIDAD` con cuenta atrás y barra.
+- Al recogerlo, `ship.activateBoost(5)` (`BOOST_TIME`): empuje y velocidad máxima x2 (`BOOST_MULT`) durante 5 s. La llama y el halo del casco pasan a cian (`BOOST_COLOR`) y el HUD muestra `VELOCIDAD` con cuenta atrás y barra; el color de la skin se mantiene.
 - `ship.reset()` pone `boostTimer` a 0: el boost se pierde al morir o al cambiar de nivel.
+
+## Skins de la nave
+
+- `SKINS` es un array de instancias de `Skin`. Cada una define `points` (silueta en espacio local, +X hacia la nariz), `nose` (distancia del centro al morro: de ahí salen las balas), `tail` (donde arranca la llama) y `color`/`flame`.
+- `Ship.draw()` ya no dibuja un triángulo cableado: solo aplica `translate`/`rotate` y delega en `skin.draw(ctx, { thrusting, boosting })`. La silueta vive en `Skin.trace(ctx)`, que también usan los iconos de vida del HUD (`drawLifeIcon`, escalados 0.45).
+- La skin actual son las globales `skin` y `skinIndex` (`let` a nivel de archivo, fuera de la sección "Estado del juego"). **No** las reinicia `initGame()`: la elección sobrevive a la reinicio de partida.
+- `S` cicla a la siguiente skin y `Shift+S` a la anterior. El chequeo está al principio de `update()`, antes de las ramas por estado, para que funcione también en `dead` y `gameover`.
+- Ojo: el modificador `Shift` se lee con `keys['ShiftLeft']` (estado mantenido), **no** con `pressed('ShiftLeft')` — `pressed()` consume el flag y lo borraría en el frame en que se pulsó Shift, así que `Shift+S` nunca se detectaría.
+- Persistencia en `localStorage` bajo `'asteroids.skin'` (el `id` de la skin), envuelta en `try/catch` porque puede no estar disponible (`file://`, modo privado). `loadSkin()` se llama al final del archivo, antes de `initGame()`.
+- El boost **no** cambia el color de la nave: el casco conserva el color de su skin y lo único que pasa a cian (`BOOST_COLOR`) son la llama y el halo (`shadowBlur`) alrededor del casco.
+- `ship.radius = 12` no depende de la skin: las colisiones son idénticas para todas las siluetas.
 
 ## Documentación vs código
 

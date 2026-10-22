@@ -31,6 +31,7 @@ Luego visita `http://localhost:3000`.
 | `←` `→`   | Rotar nave |
 | `↑`       | Propulsar  |
 | `Espacio` | Disparar   |
+| `S`       | Cambiar skin de la nave (`Shift+S` para retroceder) |
 
 ## Puntuación
 
@@ -48,3 +49,4 @@ Luego visita `http://localhost:3000`.
 - Partículas de explosión al destruir asteroides
 - Power-up de velocidad: empuje y velocidad máxima x2 durante 5 segundos, con indicador de cuenta atrás en el HUD
 - Estrella fugaz: asteroide muy rápido que aparece cada 14 segundos (máximo 2 a la vez) y desaparece solo tras 12 segundos, con estela, parpadeo de aviso y cuenta atrás en el HUD. Al destruirla explota sin partirse y vale 200 puntos
+- Skins de la nave: 6 siluetas (clásica, delta, dart, rombo, cruz, óvalo) con su propio color. Se cambian con `S` en cualquier momento y la elección se recuerda al recargar la página. Durante el boost la nave conserva su color: solo la llama y el halo pasan a cian
