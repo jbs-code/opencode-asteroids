@@ -2,8 +2,14 @@
 
 Clon de Asteroids en canvas HTML5. Página estática sin build: `index.html` (markup + estilos embebidos) y `game.js` (todo el juego, ~420 líneas).
 
-- No hay `package.json`, tests, linter, CI ni `.gitignore`. No ejecutes `npm install` ni añadas un bundler.
+- No hay `package.json`, tests, linter ni CI. No ejecutes `npm install` ni añadas un bundler.
+- El único `.gitignore` del proyecto contiene `.worktrees/` (worktrees de git locales).
 - `game.js` se carga como script clásico (`<script src="game.js">`, sin `type="module"`): sus `const`/`let` de nivel superior son globales compartidos con cualquier otro script clásico. Si lo conviertes a módulo, deja de ser global y hay que exportar explícitamente.
+
+## Worktrees
+
+- El comando `/worktree <nombre>` (`.opencode/commands/worktree.md`, scope local del proyecto) ejecuta `git worktree add ".worktrees/<nombre>"` y no cambia de directorio.
+- Los worktrees viven en `.worktrees/` (ignorado por git) y cada uno crea su rama homónima desde HEAD.
 
 ## Ejecutar y verificar
 
