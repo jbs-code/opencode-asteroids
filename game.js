@@ -42,6 +42,8 @@ const TRIPLE_TIME   = 5;     // segundos de duración del triple shot
 const TRIPLE_COUNT  = 3;     // balas por disparo
 const TRIPLE_SPREAD = 0.14;  // radianes entre cada bala del abanico
 const TRIPLE_COLOR  = '#ff6ad5';
+const DESTROY_TIME  = 5;     // segundos de duración del arma destructora
+const DESTROY_COLOR = '#ff5252';
 const PICKUP_CHANCE   = 0.12; // probabilidad de soltar un power-up
 const PICKUP_COOLDOWN = 8;    // segundos mínimos entre power-ups
 const PICKUP_TTL      = 14;   // segundos de vida del power-up
@@ -58,7 +60,7 @@ const STAR_SAFE_DIST  = 130;    // distancia mínima al centro al aparecer
 
 // ── Bullet ────────────────────────────────────────────────────────────────────
 class Bullet {
-  constructor(x, y, angle, color = '#fff') {
+  constructor(x, y, angle, color = '#fff', destroys = false) {
     this.x = x;
     this.y = y;
     const SPEED = 520;
@@ -67,6 +69,7 @@ class Bullet {
     this.ttl  = 1.1;
     this.radius = 2;
     this.color = color;
+    this.destroys = destroys;
     this.dead = false;
   }
 
@@ -401,6 +404,7 @@ class Ship {
     this.boostTimer    = 0;
     this.shieldCharges = 0;
     this.tripleTimer   = 0;
+    this.destroyTimer  = 0;
     this.dead          = false;
   }
 
@@ -414,6 +418,10 @@ class Ship {
 
   get tripleShot() {
     return this.tripleTimer > 0;
+  }
+
+  get destroying() {
+    return this.destroyTimer > 0;
   }
 
   activateBoost(seconds) {
@@ -435,12 +443,17 @@ class Ship {
     this.tripleTimer = Math.max(this.tripleTimer, seconds);
   }
 
+  activateDestroy(seconds) {
+    this.destroyTimer = Math.max(this.destroyTimer, seconds);
+  }
+
   update(dt) {
     if (this.dead) return;
     if (this.invincible    > 0) this.invincible    -= dt;
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.boostTimer    > 0) this.boostTimer    -= dt;
     if (this.tripleTimer   > 0) this.tripleTimer   -= dt;
+    if (this.destroyTimer  > 0) this.destroyTimer  -= dt;
 
     const ROT = 3.5;   // rad/s
     const thrust = SHIP_THRUST * (this.boosting ? BOOST_MULT : 1);
@@ -468,14 +481,16 @@ class Ship {
     const ox = this.x + Math.cos(this.angle) * skin.nose;
     const oy = this.y + Math.sin(this.angle) * skin.nose;
 
+    const destroying = this.destroying;
     const count = this.tripleShot ? TRIPLE_COUNT : 1;
     const step  = this.tripleShot ? TRIPLE_SPREAD : 0;
-    const color = this.tripleShot ? TRIPLE_COLOR : '#fff';
+    const color = destroying ? DESTROY_COLOR
+                : this.tripleShot ? TRIPLE_COLOR : '#fff';
 
     const bullets = [];
     for (let i = 0; i < count; i++) {
       const offset = (i - (count - 1) / 2) * step;
-      bullets.push(new Bullet(ox, oy, this.angle + offset, color));
+      bullets.push(new Bullet(ox, oy, this.angle + offset, color, destroying));
     }
     return bullets;
   }
@@ -660,8 +675,28 @@ class ShieldPowerUp extends PowerUp {
   }
 }
 
+// Power-up de arma destructora: las balas destruyen asteroides sin fragmentarlos
+class DestroyPowerUp extends PowerUp {
+  get color() {
+    return DESTROY_COLOR;
+  }
+
+  apply(ship) {
+    ship.activateDestroy(DESTROY_TIME);
+  }
+
+  drawIcon() {
+    ctx.beginPath();
+    ctx.moveTo(-5, -5);
+    ctx.lineTo( 5,  5);
+    ctx.moveTo( 5, -5);
+    ctx.lineTo(-5,  5);
+    ctx.stroke();
+  }
+}
+
 // Tipos de power-up que pueden soltar los asteroides
-const PICKUP_CLASSES = [SpeedPowerUp, TriplePowerUp, ShieldPowerUp];
+const PICKUP_CLASSES = [SpeedPowerUp, TriplePowerUp, ShieldPowerUp, DestroyPowerUp];
 
 
 // ── Estado del juego ──────────────────────────────────────────────────────────
@@ -804,7 +839,8 @@ function update(dt) {
         a.dead = true;
         score += a.points;
         explode(a.x, a.y, a.explosionCount);
-        newAsteroids.push(...a.split());
+        // Las balas destructoras eliminan el asteroide entero, sin fragmentos
+        if (!b.destroys) newAsteroids.push(...a.split());
         maybeDropPickup(a);
       }
     }
@@ -889,6 +925,7 @@ function drawHUD() {
   drawBoostIndicator();
   drawTripleIndicator();
   drawShieldIndicator();
+  drawDestroyIndicator();
   drawStarIndicator();
   drawSkinIndicator();
 }
@@ -987,6 +1024,25 @@ function drawShieldIndicator() {
       ctx.fillRect(x + 2, y - 7, pipSize - 4, pipSize - 4);
     }
   }
+}
+
+// Indicador del arma destructora con cuenta atrás y barra de progreso
+function drawDestroyIndicator() {
+  if (!ship.destroying || ship.dead) return;
+
+  const w = 150;
+  const x = W / 2 - w / 2;
+  const y = 116;
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = DESTROY_COLOR;
+  ctx.font = '13px monospace';
+  ctx.fillText(`DESTRUCTOR  ${ship.destroyTimer.toFixed(1)}s`, W / 2, y);
+
+  ctx.strokeStyle = DESTROY_COLOR;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y + 6, w, 6);
+  ctx.fillRect(x + 1, y + 7, (w - 2) * (ship.destroyTimer / DESTROY_TIME), 4);
 }
 
 
